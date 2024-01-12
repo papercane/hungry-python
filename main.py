@@ -7,27 +7,27 @@ pg.init()
 
 # game variables
 WINDOW = 550
-
+title_font = pg.font.Font(None, 35)
+score_font = pg.font.Font(None, 20)
 # colours
 BLACK = (0,0,0)
 GREEN = (206,210,175)
 DARK = (134,178,163)
 PINK = (247,159,153)
 YELLOW = (253,207,175)
+WHITE = (255, 255, 255)
 
 cell_size = 20
 number_of_cells = 25
 
-screen = pg.display.set_mode((cell_size*number_of_cells, cell_size*number_of_cells))
-pg.display.set_caption("hungry hungry snake")
-clock = pg.time.Clock()
+OFFSET = 75
 
 class Food:
     def __init__(self, snake_body) -> None:
         self.position = self.generate_random_pos(snake_body)
     def draw(self):
         # draw this on rect surface for collision detection
-        food_rect = pg.Rect(self.position.x * cell_size, self.position.y * cell_size,
+        food_rect = pg.Rect(OFFSET + self.position.x * cell_size, OFFSET+self.position.y * cell_size,
                             cell_size,cell_size)
         pg.draw.rect(screen, DARK , food_rect, 0, 10)
     
@@ -50,7 +50,7 @@ class Snake:
         self.add_segment = False
     def draw(self):
         for segment in self.body:
-            segment_rect = (segment.x * cell_size, segment.y * cell_size,
+            segment_rect = (OFFSET+segment.x * cell_size, OFFSET+segment.y * cell_size,
                             cell_size, cell_size)
             pg.draw.rect(screen, PINK, segment_rect, 0 , 5)
     def update(self):
@@ -69,6 +69,7 @@ class Game:
         self.snake = Snake()
         self.food = Food(self.snake.body)
         self.state = "RUNNING"
+        self.score = 0
     def draw(self):
         self.snake.draw()
         self.food.draw()
@@ -78,11 +79,13 @@ class Game:
             self.snake.update()
             self.check_eat()
             self.check_border()
+            self.check_tail()
         
     def check_eat(self):
         if self.snake.body[0] == self.food.position:
             self.food.position = Vector2(self.food.generate_random_pos(self.snake.body))
             self.snake.add_segment = True
+            self.score += 1
 
             
     def check_border(self):
@@ -91,10 +94,21 @@ class Game:
         if self.snake.body[0].y == number_of_cells or self.snake.body[0].y == -1:
             self.game_over()
             
+    def check_tail(self):
+        tail = self.snake.body[1:]
+        if self.snake.body[0] in tail:
+            self.game_over()
+            
     def game_over(self):
         self.snake.reset()
         self.food.position = Vector2(self.food.generate_random_pos(self.snake.body))
         self.state = "STOP"
+        self.score = 0
+
+screen = pg.display.set_mode((2*OFFSET + cell_size*number_of_cells, 2*OFFSET + cell_size*number_of_cells))
+pg.display.set_caption("hungry hungry snake")
+clock = pg.time.Clock()
+
 
 UPDATE_SNAKE = pg.USEREVENT
 pg.time.set_timer(UPDATE_SNAKE, 200)
@@ -115,6 +129,8 @@ while True:
             game.update()
             
         if event.type == pg.KEYDOWN:
+            if game.state == "STOP":
+                game.state = "RUNNING"
             if event.key == pg.K_UP and game.snake.direction != Vector2(0,1):
                 game.snake.direction = Vector2(0, -1)
             elif event.key == pg.K_DOWN and game.snake.direction != Vector2(0, -1):
@@ -131,8 +147,13 @@ while True:
     #draw
     screen.fill(GREEN)
     game.draw()
-    
-    #pg.display.flip()
+    title_surface = title_font.render("Hungry Hungry Snakes", True, WHITE)
+    score_surface = score_font.render(str(game.score), True, WHITE)
+    screen.blit(title_surface, (OFFSET - 5, cell_size*number_of_cells+20+OFFSET))
+    screen.blit(score_surface, (OFFSET+cell_size*number_of_cells,cell_size*number_of_cells+20+OFFSET))
+    pg.draw.rect(screen, WHITE, 
+                 (OFFSET-5, OFFSET-5, cell_size*number_of_cells+10,cell_size*number_of_cells+10), 5)
+
     pg.display.update()
     clock.tick(60)
     
