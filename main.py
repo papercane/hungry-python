@@ -60,27 +60,41 @@ class Snake:
             
         else:
             self.body = self.body[:-1] # selecting all elements in the list execpt for the last one
-    
+    def reset(self):
+        self.body = [Vector2(6,9), Vector2(5,9), Vector2(4,9)]
+        self.direction = Vector2(1,0)
     
 class Game:
     def __init__(self) -> None:
         self.snake = Snake()
         self.food = Food(self.snake.body)
+        self.state = "RUNNING"
     def draw(self):
         self.snake.draw()
         self.food.draw()
-    def update(self):
-        self.snake.update()
-        self.eat()
         
-    def eat(self):
+    def update(self):
+        if self.state == "RUNNING":
+            self.snake.update()
+            self.check_eat()
+            self.check_border()
+        
+    def check_eat(self):
         if self.snake.body[0] == self.food.position:
             self.food.position = Vector2(self.food.generate_random_pos(self.snake.body))
             self.snake.add_segment = True
 
             
-    #def check_border(self):
-     #   if self.snake.body[o]
+    def check_border(self):
+        if self.snake.body[0].x == number_of_cells or self.snake.body[0].x == -1:
+            self.game_over()
+        if self.snake.body[0].y == number_of_cells or self.snake.body[0].y == -1:
+            self.game_over()
+            
+    def game_over(self):
+        self.snake.reset()
+        self.food.position = Vector2(self.food.generate_random_pos(self.snake.body))
+        self.state = "STOP"
 
 UPDATE_SNAKE = pg.USEREVENT
 pg.time.set_timer(UPDATE_SNAKE, 200)
